@@ -7,6 +7,8 @@ import requests
 import boto3
 import requests
 import json
+from polybot.img_proc import Img
+
 images_bucket = os.environ['BUCKET_NAME']
 
 
@@ -74,7 +76,54 @@ class ObjectDetectionBot(Bot):
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
-        if self.is_current_msg_photo(msg):
+        if "text" in msg and msg["text"] == "hi":
+            self.send_text(msg['chat']['id'],
+                           f'Hi : {msg["first_name"]} {msg["last_name"]} , how i can help you ?  \n ')
+
+        elif msg["text"] != "hi":
+            self.send_text(msg['chat']['id'], f'Your original message: {msg["text"]}')
+        else:
+            if "caption" in msg:
+                try:
+                    img_path = self.download_user_photo(msg)
+                    if msg["caption"] == "Blur":
+                        self.send_text(msg['chat']['id'], "Blur filter in progress")
+                        new_img = Img(img_path)
+                        new_img.blur()
+                        new_path = new_img.save_img()
+                        self.send_photo(msg["chat"]["id"], new_path)
+                        self.send_text(msg['chat']['id'], "Blur filter applied")
+                    elif msg["caption"] == "Contour":
+                        self.send_text(msg['chat']['id'], "Contour filter in progress")
+                        new_img = Img(img_path)
+                        new_img.contour()
+                        new_path = new_img.save_img()
+                        self.send_photo(msg["chat"]["id"], new_path)
+                        self.send_text(msg['chat']['id'], "Contour filter applied")
+                    elif msg["caption"] == "Salt and pepper":
+                        self.send_text(msg['chat']['id'], "Salt and pepper filter in progress")
+                        new_img = Img(img_path)
+                        new_img.salt_n_pepper()
+                        new_path = new_img.save_img()
+                        self.send_photo(msg["chat"]["id"], new_path)
+                        self.send_text(msg['chat']['id'], "Salt and pepper filter applied")
+                    elif msg["caption"] == "rotate":
+                        self.send_text(msg['chat']['id'], "rotate filter in progress")
+                        new_img = Img(img_path)
+                        new_img.rotate()
+                        new_path = new_img.save_img()
+                        self.send_photo(msg["chat"]["id"], new_path)
+                        self.send_text(msg['chat']['id'], "rotate filter applied")
+
+                    else:
+                        self.send_text(msg['chat']['id'], f'error , Need to choose a valid caption')
+                except Exception as e:
+                    logger.info(f"Error {e}")
+                    self.send_text(msg['chat']['id'], f'failed - try again later')
+            else:
+                self.send_text(msg['chat']['id'], f'failed - Please Provide Caption')
+
+        if self.is_current_msg_photo(msg) and msg["caption"] == "predict": :
             photo_path = self.download_user_photo(msg)
             logger.info(f'Photo downloaded to: {photo_path}')
             photo_S3_name = photo_path.split("/")
@@ -89,8 +138,6 @@ class ObjectDetectionBot(Bot):
             json_data = {'imgName': image_filename}
 
             response_data = None  # Initialize response_data variable
-
-
 
             try:
                 # Send an HTTP POST request to the YOLO5 service
@@ -116,15 +163,13 @@ class ObjectDetectionBot(Bot):
                         for label in labels:
                             class_value = label.get('class')  # Assuming 'class' key contains the class value
                             class_counts[class_value] = class_counts.get(class_value, 0) + 1
-                    
-                    
 
                         # Send class counts to the chat or log them
                         for class_value, count in class_counts.items():
                             message = f"{class_value}: {count} "
                             self.send_text(msg['chat']['id'], message)
-                        # Alternatively, you can log the counts
-                        logger.info(message)
+                            # Alternatively, you can log the counts
+                            logger.info(message)
 
                     logger.info("Prediction request sent successfully.")
                 else:
@@ -135,12 +180,5 @@ class ObjectDetectionBot(Bot):
                 logger.error(f"Error occurred: {e}")
                 self.send_text(msg['chat']['id'], f'somthing is went wrong ...please try again')
 
-
-
-
-
-
-
         else:
             logger.info('Not a photo message, ignoring.')
-
