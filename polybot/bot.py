@@ -3,6 +3,11 @@ from loguru import logger
 import os
 import time
 from telebot.types import InputFile
+import requests
+import boto3
+import requests
+import json
+images_bucket = os.environ['BUCKET_NAME']
 
 
 class Bot:
@@ -47,17 +52,13 @@ class Bot:
 
         with open(file_info.file_path, 'wb') as photo:
             photo.write(data)
-
         return file_info.file_path
 
     def send_photo(self, chat_id, img_path):
         if not os.path.exists(img_path):
             raise RuntimeError("Image path doesn't exist")
 
-        self.telegram_bot_client.send_photo(
-            chat_id,
-            InputFile(img_path)
-        )
+        self.telegram_bot_client.send_photo(chat_id, InputFile(img_path))
 
     def handle_message(self, msg):
         """Bot Main message handler"""
@@ -66,12 +67,80 @@ class Bot:
 
 
 class ObjectDetectionBot(Bot):
+
+    def __init__(self, token, telegram_chat_url):
+        super().__init__(token, telegram_chat_url)
+
     def handle_message(self, msg):
         logger.info(f'Incoming message: {msg}')
 
         if self.is_current_msg_photo(msg):
             photo_path = self.download_user_photo(msg)
+            logger.info(f'Photo downloaded to: {photo_path}')
+            photo_S3_name = photo_path.split("/")
+            # Upload the photo to S3
+            client = boto3.client('s3')
+            client.upload_file(photo_path, images_bucket, photo_S3_name[1])
 
-            # TODO upload the photo to S3
-            # TODO send an HTTP request to the `yolo5` service for prediction
-            # TODO send the returned results to the Telegram end-user
+            # Send an HTTP request to the YOLO5 service for prediction
+            yolo5_url = "http://my_yolo5_test:8081/predict"
+            headers = {'Content-Type': 'application/json'}
+            image_filename = photo_path
+            json_data = {'imgName': image_filename}
+
+            response_data = None  # Initialize response_data variable
+
+
+
+            try:
+                # Send an HTTP POST request to the YOLO5 service
+                response = requests.post(yolo5_url, headers=headers, json=json_data)
+
+                # Logging the status code for debugging
+                logger.info(f"Response status code: {response.status_code}")
+
+                # Check the response status code
+                if response.status_code == 200:
+                    response_data = json.loads(response.text)
+
+                    # Extract label values from the response data
+                    labels = response_data.get('labels', [])
+
+                    if not labels:  # Check if labels list is empty
+                        logger.error("Labels not found in response data.")
+                        self.send_text(msg['chat']['id'], "Labels not found in response data. Please try again.")
+                    else:
+
+                        # Count the occurrences of each class value
+                        class_counts = {}
+                        for label in labels:
+                            class_value = label.get('class')  # Assuming 'class' key contains the class value
+                            class_counts[class_value] = class_counts.get(class_value, 0) + 1
+                    
+                    
+
+                        # Send class counts to the chat or log them
+                        for class_value, count in class_counts.items():
+                            message = f"{class_value}: {count} "
+                            self.send_text(msg['chat']['id'], message)
+                        # Alternatively, you can log the counts
+                        logger.info(message)
+
+                    logger.info("Prediction request sent successfully.")
+                else:
+                    logger.error(f"Prediction request failed with status code: {response.status_code}")
+                    self.send_text(msg['chat']['id'], f'somthing is went wrong ...please try again')
+
+            except Exception as e:
+                logger.error(f"Error occurred: {e}")
+                self.send_text(msg['chat']['id'], f'somthing is went wrong ...please try again')
+
+
+
+
+
+
+
+        else:
+            logger.info('Not a photo message, ignoring.')
+

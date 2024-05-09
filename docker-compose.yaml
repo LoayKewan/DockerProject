@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+
+  mongo_1:
+    image: mongo:5
+    container_name: mongo_1
+    ports:
+      - "27017:27017"
+    networks:
+      - mongoCluster
+    command: mongod --replSet myReplicaSet --bind_ip_all
+
+  mongo_2:
+    image: mongo:5
+    container_name: mongo_2
+    ports:
+      - "27018:27017"
+    networks:
+      - mongoCluster
+    command: mongod --replSet myReplicaSet --bind_ip_all
+
+  mongo_3:
+    image: mongo:5
+    container_name: mongo_3
+    ports:
+      - "27019:27017"
+    networks:
+      - mongoCluster
+    command: mongod --replSet myReplicaSet --bind_ip_all
+
+  init-replica-set:
+    build: mongodb
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - mongo_1
+      - mongo_2
+      - mongo_3
+    networks:
+      - mongoCluster
+  
+  
+  my_yolo5_test:
+    build: yolo5
+    ports:
+      - "8081:8081"
+    networks:
+      - mongoCluster    
+    depends_on:
+      - mongo_1
+  
+  
+  my_polybot_test:
+    build: polybot
+    ports:
+      - "8443:8443"    
+    networks:
+      - mongoCluster
+    depends_on:
+      - my_yolo5_test
+    
+networks:
+  mongoCluster:
+    driver: bridge
+
