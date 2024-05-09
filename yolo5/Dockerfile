@@ -9,4 +9,3 @@ ENV BUCKET_NAME=loay-kewan-test-123
 COPY . .
 
 CMD ["python3", "app.py"]
-

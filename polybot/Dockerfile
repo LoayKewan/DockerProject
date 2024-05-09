@@ -3,7 +3,6 @@ WORKDIR /usr/src/app
 
 RUN pip install --upgrade pip
 COPY requirements.txt .
-COPY my_secret.txt .
 RUN pip install -r requirements.txt
 ENV BUCKET_NAME=loay-kewan-test-123
 ENV TELEGRAM_TOKEN=7090591328:AAFWgsjlt4xz5Y0VFTP5kcSyhc4ZQ64TtTc
