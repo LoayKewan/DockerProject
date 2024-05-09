@@ -123,7 +123,7 @@ class ObjectDetectionBot(Bot):
             else:
                 self.send_text(msg['chat']['id'], f'failed - Please Provide Caption')
 
-        if self.is_current_msg_photo(msg) and msg["caption"] == "predict": :
+        if self.is_current_msg_photo(msg) and msg["caption"] == "predict":
             photo_path = self.download_user_photo(msg)
             logger.info(f'Photo downloaded to: {photo_path}')
             photo_S3_name = photo_path.split("/")
