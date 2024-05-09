@@ -78,107 +78,106 @@ class ObjectDetectionBot(Bot):
 
         if "text" in msg and msg["text"] == "hi":
             self.send_text(msg['chat']['id'],
-                           f'Hi : {msg["first_name"]} {msg["last_name"]} , how i can help you ?  \n ')
+                           f"Hi: {msg['chat']['first_name']} {msg['chat']['last_name']}, how can I help you?")
 
-        elif msg["text"] != "hi":
+        if "text" in msg and msg["text"] != "hi":
             self.send_text(msg['chat']['id'], f'Your original message: {msg["text"]}')
-        else:
-            if "caption" in msg:
-                try:
-                    img_path = self.download_user_photo(msg)
-                    if msg["caption"] == "Blur":
-                        self.send_text(msg['chat']['id'], "Blur filter in progress")
-                        new_img = Img(img_path)
-                        new_img.blur()
-                        new_path = new_img.save_img()
-                        self.send_photo(msg["chat"]["id"], new_path)
-                        self.send_text(msg['chat']['id'], "Blur filter applied")
-                    elif msg["caption"] == "Contour":
-                        self.send_text(msg['chat']['id'], "Contour filter in progress")
-                        new_img = Img(img_path)
-                        new_img.contour()
-                        new_path = new_img.save_img()
-                        self.send_photo(msg["chat"]["id"], new_path)
-                        self.send_text(msg['chat']['id'], "Contour filter applied")
-                    elif msg["caption"] == "Salt and pepper":
-                        self.send_text(msg['chat']['id'], "Salt and pepper filter in progress")
-                        new_img = Img(img_path)
-                        new_img.salt_n_pepper()
-                        new_path = new_img.save_img()
-                        self.send_photo(msg["chat"]["id"], new_path)
-                        self.send_text(msg['chat']['id'], "Salt and pepper filter applied")
-                    elif msg["caption"] == "rotate":
-                        self.send_text(msg['chat']['id'], "rotate filter in progress")
-                        new_img = Img(img_path)
-                        new_img.rotate()
-                        new_path = new_img.save_img()
-                        self.send_photo(msg["chat"]["id"], new_path)
-                        self.send_text(msg['chat']['id'], "rotate filter applied")
 
-                    else:
-                        self.send_text(msg['chat']['id'], f'error , Need to choose a valid caption')
-                except Exception as e:
-                    logger.info(f"Error {e}")
-                    self.send_text(msg['chat']['id'], f'failed - try again later')
-            else:
-                self.send_text(msg['chat']['id'], f'failed - Please Provide Caption')
-
-        if self.is_current_msg_photo(msg) and msg["caption"] == "predict":
-            photo_path = self.download_user_photo(msg)
-            logger.info(f'Photo downloaded to: {photo_path}')
-            photo_S3_name = photo_path.split("/")
-            # Upload the photo to S3
-            client = boto3.client('s3')
-            client.upload_file(photo_path, images_bucket, photo_S3_name[1])
-
-            # Send an HTTP request to the YOLO5 service for prediction
-            yolo5_url = "http://my_yolo5_test:8081/predict"
-            headers = {'Content-Type': 'application/json'}
-            image_filename = photo_path
-            json_data = {'imgName': image_filename}
-
-            response_data = None  # Initialize response_data variable
-
+        if "caption" in msg and "photo" in msg and self.is_current_msg_photo(msg):
             try:
-                # Send an HTTP POST request to the YOLO5 service
-                response = requests.post(yolo5_url, headers=headers, json=json_data)
+                photo_path = self.download_user_photo(msg)
+                if msg["caption"] == "Blur":
+                    self.send_text(msg['chat']['id'], "Blur filter in progress")
+                    new_img = Img(photo_path)
+                    new_img.blur()
+                    new_path = new_img.save_img()
+                    self.send_photo(msg["chat"]["id"], new_path)
+                    self.send_text(msg['chat']['id'], "Blur filter applied")
+                elif msg["caption"] == "Contour":
+                    self.send_text(msg['chat']['id'], "Contour filter in progress")
+                    new_img = Img(photo_path)
+                    new_img.contour()
+                    new_path = new_img.save_img()
+                    self.send_photo(msg["chat"]["id"], new_path)
+                    self.send_text(msg['chat']['id'], "Contour filter applied")
+                elif msg["caption"] == "Salt and pepper":
+                    self.send_text(msg['chat']['id'], "Salt and pepper filter in progress")
+                    new_img = Img(photo_path)
+                    new_img.salt_n_pepper()
+                    new_path = new_img.save_img()
+                    self.send_photo(msg["chat"]["id"], new_path)
+                    self.send_text(msg['chat']['id'], "Salt and pepper filter applied")
+                elif msg["caption"] == "rotate":
+                    self.send_text(msg['chat']['id'], "rotate filter in progress")
+                    new_img = Img(photo_path)
+                    new_img.rotate()
+                    new_path = new_img.save_img()
+                    self.send_photo(msg["chat"]["id"], new_path)
+                    self.send_text(msg['chat']['id'], "rotate filter applied")
+                elif msg["caption"] == "predict":
+                    self.send_text(msg['chat']['id'], "predict in progress")
+                    time.sleep(3)
+                    logger.info(f'Photo downloaded to: {photo_path}')
+                    photo_S3_name = photo_path.split("/")
+                    # Upload the photo to S3
+                    client = boto3.client('s3')
+                    client.upload_file(photo_path, images_bucket, photo_S3_name[1])
 
-                # Logging the status code for debugging
-                logger.info(f"Response status code: {response.status_code}")
+                    # Send an HTTP request to the YOLO5 service for prediction
+                    yolo5_url = "http://my_yolo5_test:8081/predict"
+                    headers = {'Content-Type': 'application/json'}
+                    image_filename = photo_path
+                    json_data = {'imgName': image_filename}
 
-                # Check the response status code
-                if response.status_code == 200:
-                    response_data = json.loads(response.text)
+                    response_data = None  # Initialize response_data variable
 
-                    # Extract label values from the response data
-                    labels = response_data.get('labels', [])
+                    try:
+                        # Send an HTTP POST request to the YOLO5 service
+                        response = requests.post(yolo5_url, headers=headers, json=json_data)
 
-                    if not labels:  # Check if labels list is empty
-                        logger.error("Labels not found in response data.")
-                        self.send_text(msg['chat']['id'], "Labels not found in response data. Please try again.")
-                    else:
+                        # Logging the status code for debugging
+                        logger.info(f"Response status code: {response.status_code}")
 
-                        # Count the occurrences of each class value
-                        class_counts = {}
-                        for label in labels:
-                            class_value = label.get('class')  # Assuming 'class' key contains the class value
-                            class_counts[class_value] = class_counts.get(class_value, 0) + 1
+                        # Check the response status code
+                        if response.status_code == 200:
+                            response_data = json.loads(response.text)
 
-                        # Send class counts to the chat or log them
-                        for class_value, count in class_counts.items():
-                            message = f"{class_value}: {count} "
-                            self.send_text(msg['chat']['id'], message)
-                            # Alternatively, you can log the counts
-                            logger.info(message)
+                            # Extract label values from the response data
+                            labels = response_data.get('labels', [])
 
-                    logger.info("Prediction request sent successfully.")
+                            if not labels:  # Check if labels list is empty
+                                logger.error("Labels not found in response data.")
+                                self.send_text(msg['chat']['id'],
+                                               "Labels not found in response data. Please try again.")
+                            else:
+
+                                # Count the occurrences of each class value
+                                class_counts = {}
+                                for label in labels:
+                                    class_value = label.get('class')  # Assuming 'class' key contains the class value
+                                    class_counts[class_value] = class_counts.get(class_value, 0) + 1
+
+                                # Send class counts to the chat or log them
+                                for class_value, count in class_counts.items():
+                                    message = f"{class_value}: {count} "
+                                    self.send_text(msg['chat']['id'], message)
+                                    # Alternatively, you can log the counts
+                                    logger.info(message)
+
+                                logger.info("Prediction request sent successfully")
+                        else:
+                            logger.error(f"Prediction request failed with status code: {response.status_code}")
+                            self.send_text(msg['chat']['id'], f"something went wrong... Please try again")
+
+                    except Exception as e:
+                        logger.error(f"Error occurred: {e}")
+                        self.send_text(msg['chat']['id'], f"something went wrong... Please try again")
+
                 else:
-                    logger.error(f"Prediction request failed with status code: {response.status_code}")
-                    self.send_text(msg['chat']['id'], f'somthing is went wrong ...please try again')
-
+                    self.send_text(msg['chat']['id'], "error, Need to choose a valid caption")
             except Exception as e:
-                logger.error(f"Error occurred: {e}")
-                self.send_text(msg['chat']['id'], f'somthing is went wrong ...please try again')
-
+                logger.info(f"Error {e}")
+                self.send_text(msg['chat']['id'], "failed - try again later")
         else:
-            logger.info('Not a photo message, ignoring.')
+            self.send_text(msg['chat']['id'], "failed - Please Provide Caption")
+
