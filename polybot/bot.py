@@ -164,6 +164,7 @@ class ObjectDetectionBot(Bot):
                                     # Alternatively, you can log the counts
                                     logger.info(message)
 
+
                                 logger.info("Prediction request sent successfully")
                         else:
                             logger.error(f"Prediction request failed with status code: {response.status_code}")
