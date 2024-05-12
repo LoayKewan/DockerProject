@@ -30,6 +30,7 @@ jobs:
           POLY_BOT_IMAGE_NAME=polybot:${{ github.run_number }}
           docker build -t $POLY_BOT_IMAGE_NAME .
           docker tag $POLY_BOT_IMAGE_NAME ${{ secrets.DOCKERHUB_USERNAME}}/$POLY_BOT_IMAGE_NAME
+          
           docker push ${{ secrets.DOCKERHUB_USERNAME}}/$POLY_BOT_IMAGE_NAME
 
   Yolo5Build:

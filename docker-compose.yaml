@@ -64,8 +64,7 @@ services:
     depends_on:
       - mongo_1
     
-  
-  
+
   my_polybot_test:
     image: loaykewan/polybot:${POLYBOT_IMG_NAME}
     ports:
