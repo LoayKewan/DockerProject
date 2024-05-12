@@ -7,7 +7,7 @@ import requests
 import boto3
 import requests
 import json
-from polybot.img_proc import Img
+from img_proc import Img
 
 images_bucket = os.environ['BUCKET_NAME']
 
@@ -74,18 +74,15 @@ class ObjectDetectionBot(Bot):
         super().__init__(token, telegram_chat_url)
 
     def handle_message(self, msg):
+
         logger.info(f'Incoming message: {msg}')
 
-        if "text" in msg and msg["text"] == "hi":
-            self.send_text(msg['chat']['id'],
-                           f"Hi: {msg['chat']['first_name']} {msg['chat']['last_name']}, how can I help you?")
-
-        if "text" in msg and msg["text"] != "hi":
-            self.send_text(msg['chat']['id'], f'Your original message: {msg["text"]}')
-
-        if "caption" in msg and "photo" in msg and self.is_current_msg_photo(msg):
+        
+        if "caption" in msg :
             try:
                 photo_path = self.download_user_photo(msg)
+                
+
                 if msg["caption"] == "Blur":
                     self.send_text(msg['chat']['id'], "Blur filter in progress")
                     new_img = Img(photo_path)
@@ -179,6 +176,19 @@ class ObjectDetectionBot(Bot):
             except Exception as e:
                 logger.info(f"Error {e}")
                 self.send_text(msg['chat']['id'], "failed - try again later")
+
+
+
+
+        
+
+        elif "text" in msg and msg["text"] == "hi":
+            self.send_text(msg['chat']['id'],f"Hi: {msg['chat']['first_name']} {msg['chat']['last_name']}, how can I help you?")
+
+
+
+        elif "text" in msg and msg["text"] != "hi":
+            self.send_text(msg['chat']['id'], f'Your original message: {msg["text"]}')
         else:
             self.send_text(msg['chat']['id'], "failed - Please Provide Caption")
 

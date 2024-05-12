@@ -3,34 +3,43 @@ version: '3'
 services:
 
   mongo_1:
-    image: mongo:5
+    image: loaykewan/mongo:${MONGO_DB_VER}
     container_name: mongo_1
     ports:
       - "27017:27017"
+    
+    env_file:
+      - .env
     networks:
       - mongoCluster
     command: mongod --replSet myReplicaSet --bind_ip_all
 
   mongo_2:
-    image: mongo:5
+    image: loaykewan/mongo:${MONGO_DB_VER}
     container_name: mongo_2
     ports:
       - "27018:27017"
+    
+    env_file:
+      - .env
     networks:
       - mongoCluster
     command: mongod --replSet myReplicaSet --bind_ip_all
 
   mongo_3:
-    image: mongo:5
+    image: loaykewan/mongo:${MONGO_DB_VER}
     container_name: mongo_3
     ports:
       - "27019:27017"
     networks:
       - mongoCluster
     command: mongod --replSet myReplicaSet --bind_ip_all
+    env_file:
+      - .env
+
 
   init-replica-set:
-    build: mongodb
+    image: loaykewan/mongo:${MONGO_DB_VER}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
@@ -39,27 +48,43 @@ services:
       - mongo_3
     networks:
       - mongoCluster
-  
+    env_file:
+      - .env
   
   my_yolo5_test:
-    build: yolo5
+    image : loaykewan/${YOLO5_IMG_NAME}
     ports:
       - "8081:8081"
     networks:
       - mongoCluster    
+    
+    env_file:
+      - .env
+
     depends_on:
       - mongo_1
+    
   
   
   my_polybot_test:
-    build: polybot
+    image: loaykewan/${POLYBOT_IMG_NAME}
     ports:
       - "8443:8443"    
     networks:
       - mongoCluster
     depends_on:
       - my_yolo5_test
-    
+    secrets:
+      - my_secret
+    env_file:
+      - .env
+
+
+secrets:
+  my_secret:
+    file: ./my_secret.txt
+
+
 networks:
   mongoCluster:
     driver: bridge
