@@ -66,7 +66,7 @@ services:
     
 
   my_polybot_test:
-    image: loaykewan/polybot:${POLYBOT_IMG_NAME}
+    image: loaykewan/${POLYBOT_IMG_NAME}
     ports:
       - "8443:8443"    
     networks:
