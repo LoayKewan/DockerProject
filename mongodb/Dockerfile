@@ -7,7 +7,6 @@ WORKDIR /usr/src/app
 # Copy the initialization script into the container
 COPY init-replica-set.sh .
 
-
 # Install dependencies required for Docker installation
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
