@@ -7,17 +7,10 @@ app = flask.Flask(__name__)
 
 
 
-with open("/run/secrets/my_secret" , "r") as my_secret :
-    my_secret_read = my_secret.read().strip()
-
-print(my_secret_read)
 
 
 
-
-#TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-
-TELEGRAM_TOKEN=my_secret_read
+TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
 
 
