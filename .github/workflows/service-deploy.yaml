@@ -87,7 +87,6 @@ jobs:
             sudo apt update && sudo apt install jq -y
             
             cd PolybotService/
-            
             # Save telegram bot token in a secret file, to be used in docker-compose.yaml
             echo "${{ secrets.TELEGRAM_BOT_TOKEN }}" > telegram_bot_token.secret
             
