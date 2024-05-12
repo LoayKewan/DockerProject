@@ -3,7 +3,7 @@ version: '3'
 services:
 
   mongo_1:
-    image: loaykewan/mongo:${MONGO_DB_VER}
+    image: loaykewan/${MONGO_DB_VER}
     container_name: mongo_1
     ports:
       - "27017:27017"
@@ -15,7 +15,7 @@ services:
     command: mongod --replSet myReplicaSet --bind_ip_all
 
   mongo_2:
-    image: loaykewan/mongo:${MONGO_DB_VER}
+    image: loaykewan/${MONGO_DB_VER}
     container_name: mongo_2
     ports:
       - "27018:27017"
@@ -26,7 +26,7 @@ services:
     command: mongod --replSet myReplicaSet --bind_ip_all
 
   mongo_3:
-    image: loaykewan/mongo:${MONGO_DB_VER}
+    image: loaykewan/${MONGO_DB_VER}
     container_name: mongo_3
     ports:
       - "27019:27017"
@@ -38,7 +38,7 @@ services:
 
 
   init-replica-set:
-    image: loaykewan/mongo:${MONGO_DB_VER}
+    image: loaykewan/${MONGO_DB_VER}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
