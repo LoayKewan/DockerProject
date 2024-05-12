@@ -19,7 +19,6 @@ services:
     container_name: mongo_2
     ports:
       - "27018:27017"
-    
     env_file:
       - .env
     networks:
