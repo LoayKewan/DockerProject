@@ -5,9 +5,7 @@ from bot import ObjectDetectionBot
 
 app = flask.Flask(__name__)
 
-
-
-TELEGRAM_TOKEN = os.getenv['TELEGRAM_BOT_TOKEN']
+TELEGRAM_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 TELEGRAM_APP_URL = os.environ['TELEGRAM_APP_URL']
 
 @app.route('/', methods=['GET'])
