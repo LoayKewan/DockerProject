@@ -38,7 +38,7 @@ services:
 
 
   init-replica-set:
-    image: loaykewan/mongo:${MONGO_DB_VER}
+    image: loaykewan/mongo_mongo:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:

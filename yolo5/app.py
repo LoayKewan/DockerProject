@@ -11,8 +11,6 @@ import boto3
 from pymongo import MongoClient
 from bson import json_util
 
-
-
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +25,7 @@ def connect_to_mongodb(connection_string):
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
         raise
+
 
 def get_primary_node():
     try:
@@ -48,6 +47,7 @@ def get_primary_node():
         logger.error(f"An error occurred while determining the primary node: {e}")
         return None
 
+
 def create_collection(db, collection_name):
     try:
         if collection_name in db.list_collection_names():
@@ -61,7 +61,6 @@ def create_collection(db, collection_name):
         raise
 
 
-
 def insert_data(collection, data):
     try:
         collection.insert_one(data)
@@ -71,15 +70,13 @@ def insert_data(collection, data):
         raise
 
 
-
-
-
 images_bucket = os.environ['BUCKET_NAME']
 
 with open("data/coco128.yaml", "r") as stream:
     names = yaml.safe_load(stream)['names']
 
 app = Flask(__name__)
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -96,23 +93,18 @@ def predict():
     logger.info(f'img_name is recived is {img_name}')
     photo_S3_name = img_name.split("/")
 
-
     file_path_pic_download = os.getcwd() + "/" + str(photo_S3_name[1])
     logger.info(file_path_pic_download)
     client = boto3.client('s3')
-    client.download_file(images_bucket, str(photo_S3_name[1]) , file_path_pic_download)
-    
-
+    client.download_file(images_bucket, str(photo_S3_name[1]), file_path_pic_download)
 
     # TODO download img_name from S3, store the local image path in the original_img_path variable.
     #  The bucket name is provided as an env var BUCKET_NAME.
 
-    #original_img_path = file_path_pic_download
+    # original_img_path = file_path_pic_download
     original_img_path = file_path_pic_download
     logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
     # Predicts the objects in the image
-
-
 
     run(
         weights='yolov5s.pt',
@@ -137,13 +129,6 @@ def predict():
     unique_filename = str(uuid.uuid4()) + '.jpeg'
     client.upload_file(json_data["path"], images_bucket, unique_filename)
     # TODO Uploads the predicted image (predicted_img_path) to S3 (be careful not to override the original image).
-    
-
-
-    
-
-
-
 
     # Parse prediction labels and create a summary
     path = Path(f'static/data/{prediction_id}/labels/{photo_S3_name[1].split(".")[0]}.txt')
@@ -173,9 +158,7 @@ def predict():
                 'time': time.time()
             }
 
-
             primary_client = None  # Initialize primary_client variable outside try block
-
 
             try:
                 logger.info("Determining the primary node...")
@@ -185,17 +168,17 @@ def predict():
                     logger.info("Primary node found.")
                     db = primary_client['mydatabase']
                     collection_name = 'prediction'
-                            
+
                     create_collection(db, collection_name)
-                    
+
                     collection = db[collection_name]
                     logger.info("Inserting data...")
-                
-            
+
                     insert_data(collection, prediction_summary)
 
                     doc = collection.find_one({})
                     json_doc = json.dumps(doc, default=json_util.default)
+
 
                     return json_doc
 
@@ -206,15 +189,14 @@ def predict():
                 logger.info(f"An error occurred: {e}")
             finally:
                 if primary_client:
-                    primary_client.close()            
+                    primary_client.close()
 
             logger.info(prediction_summary)
 
-             
-
-            #return prediction_summary
+            # return prediction_summary
     else:
         return f'prediction: {prediction_id}/{photo_S3_name[1]}. prediction result not found', 404
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8081)
