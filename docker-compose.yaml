@@ -24,7 +24,6 @@ services:
       - mongoCluster
     command: mongod --replSet myReplicaSet --bind_ip_all
 
-
   mongo_3:
     image: loaykewan/mongo:${MONGO_DB_VER}
     container_name: mongo_3
